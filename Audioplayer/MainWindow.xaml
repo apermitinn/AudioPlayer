@@ -5,21 +5,55 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:Audioplayer"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="MainWindow" Height="500" Width="800">
     <Window.CommandBindings>
         <CommandBinding Command="ApplicationCommands.Open" Executed="OpenFile_Executed" CanExecute="OpenFile_CanExecute" />
         <CommandBinding Command="MediaCommands.Play" Executed="Play_Executed" CanExecute="Play_CanExecute" />
         <CommandBinding Command="MediaCommands.Pause" Executed="Pause_Executed" CanExecute="Pause_CanExecute" />
         <CommandBinding Command="MediaCommands.Stop" Executed="Stop_Executed" CanExecute="Stop_CanExecute" />
         <CommandBinding Command="MediaCommands.Rewind" Executed="Rewind_Executed" CanExecute="Rewind_CanExecute" />
+        <CommandBinding Command="MediaCommands.IncreaseVolume" Executed="IncreaseVolume_Executed" CanExecute="IncreaseVolume_CanExecute" />
+        <CommandBinding Command="MediaCommands.DecreaseVolume" Executed="DecreaseVolume_Executed" CanExecute="DecreaseVolume_CanExecute" />
+        <CommandBinding Command="MediaCommands.MuteVolume" Executed="MuteVolume_Executed" CanExecute="MuteVolume_CanExecute" />
     </Window.CommandBindings>
     <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition />
+            <ColumnDefinition />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition />
+            <RowDefinition />
+        </Grid.RowDefinitions>
         <MediaElement x:Name="mediaPlayer" LoadedBehavior="Manual" />
-        <Button Content="Open file" HorizontalAlignment="Left" Margin="10,10,0,0" VerticalAlignment="Top" Height="68" Width="84" Command="ApplicationCommands.Open"/>
-        <Button Content="Play" HorizontalAlignment="Left" Margin="10,149,0,0" VerticalAlignment="Top" Height="68" Width="84" Command="MediaCommands.Play"/>
-        <Button Content="Pause" HorizontalAlignment="Left" Margin="99,149,0,0" VerticalAlignment="Top" Height="68" Width="84" Command="MediaCommands.Pause"/>
-        <Button Content="Stop" HorizontalAlignment="Left" Margin="188,149,0,0" VerticalAlignment="Top" Height="68" Width="84" Command="MediaCommands.Stop"/>
-        <Button Content="-5 sec" HorizontalAlignment="Left" Margin="10,222,0,0" VerticalAlignment="Top" Height="68" Width="84" Command="MediaCommands.Rewind" CommandParameter="-5"/>
-        <Button Content="+5 sec" HorizontalAlignment="Left" Margin="188,222,0,0" VerticalAlignment="Top" Height="68" Width="84" Command="MediaCommands.Rewind" CommandParameter="5"/>
+
+        <Grid Grid.Column="0" Grid.Row="1">
+            <Button Content="Play" HorizontalAlignment="Left" Margin="10,89,0,0" VerticalAlignment="Top" Height="68" Width="84" Command="MediaCommands.Play"/>
+            <Button Content="Pause" HorizontalAlignment="Left" Margin="99,89,0,0" VerticalAlignment="Top" Height="68" Width="84" Command="MediaCommands.Pause"/>
+            <Button Content="Stop" HorizontalAlignment="Left" Margin="188,89,0,0" VerticalAlignment="Top" Height="68" Width="84" Command="MediaCommands.Stop"/>
+            <Button Content="-5 sec" HorizontalAlignment="Left" Margin="10,162,0,0" VerticalAlignment="Top" Height="68" Width="84" Command="MediaCommands.Rewind" CommandParameter="-5"/>
+            <Button Content="+5 sec" HorizontalAlignment="Left" Margin="188,162,0,0" VerticalAlignment="Top" Height="68" Width="84" Command="MediaCommands.Rewind" CommandParameter="5"/>
+            <TextBlock Text="{Binding VolumeValue}" Margin="291,59,0,151" />
+            <Button Content="Volume+" HorizontalAlignment="Left" Margin="306,91,0,0" VerticalAlignment="Top" Height="32" Width="60" Command="MediaCommands.IncreaseVolume"/>
+            <Button Content="Volume-" HorizontalAlignment="Left" Margin="306,125,0,0" VerticalAlignment="Top" Height="32" Width="60" Command="MediaCommands.DecreaseVolume"/>
+            <Button Content="Mute" HorizontalAlignment="Left" Margin="306,164,0,0" VerticalAlignment="Top" Height="32" Width="60" Command="MediaCommands.MuteVolume" CommandParameter="5" RenderTransformOrigin="0.483,0.157"/>
+        </Grid>
+
+        <Grid Grid.Column="1" Grid.Row="0" Grid.RowSpan="2">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="auto"/>
+                <RowDefinition />
+                <RowDefinition Height="auto"/>
+            </Grid.RowDefinitions>
+            <TextBox Grid.Row="0" Text="{Binding SearchText, Mode=TwoWay}" TextChanged="SearchText_TextChanged"/>
+            <ListBox Grid.Row="1" ItemsSource="{Binding TrackList}" SelectedItem="{Binding SelectedTrack}" SelectionChanged="ListBox_SelectionChanged">
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding Name}" />
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            <Button Grid.Row="2" Content="Open file" HorizontalAlignment="Left" Height="68" Width="84" Command="ApplicationCommands.Open"/>
+        </Grid>
     </Grid>
 </Window>
