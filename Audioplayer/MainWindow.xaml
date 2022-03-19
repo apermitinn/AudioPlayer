@@ -27,13 +27,24 @@
         </Grid.RowDefinitions>
         <MediaElement x:Name="mediaPlayer" LoadedBehavior="Manual" />
 
+        <Grid Grid.Column="0" Grid.Row="0">
+            <StackPanel>
+                <Image Source="{Binding Artwork}"/>
+                <TextBlock Text="{Binding SelectedTrack.MetaData.Album}"/>
+                <TextBlock Text="{Binding SelectedTrack.MetaData.Title}"/>
+                <TextBlock Text="{Binding SelectedTrack.MetaData.Singer}"/>
+                <TextBlock Text="{Binding SelectedTrack.MetaData.Year}"/>
+                <TextBlock Text="{Binding SelectedTrack.MetaData.Duration}"/>
+            </StackPanel>
+        </Grid>
+        
         <Grid Grid.Column="0" Grid.Row="1">
             <Button Content="Play" HorizontalAlignment="Left" Margin="10,89,0,0" VerticalAlignment="Top" Height="68" Width="84" Command="MediaCommands.Play"/>
             <Button Content="Pause" HorizontalAlignment="Left" Margin="99,89,0,0" VerticalAlignment="Top" Height="68" Width="84" Command="MediaCommands.Pause"/>
             <Button Content="Stop" HorizontalAlignment="Left" Margin="188,89,0,0" VerticalAlignment="Top" Height="68" Width="84" Command="MediaCommands.Stop"/>
             <Button Content="-5 sec" HorizontalAlignment="Left" Margin="10,162,0,0" VerticalAlignment="Top" Height="68" Width="84" Command="MediaCommands.Rewind" CommandParameter="-5"/>
             <Button Content="+5 sec" HorizontalAlignment="Left" Margin="188,162,0,0" VerticalAlignment="Top" Height="68" Width="84" Command="MediaCommands.Rewind" CommandParameter="5"/>
-            <TextBlock Text="{Binding VolumeValue}" Margin="291,59,0,151" />
+            <TextBlock Text="{Binding VolumeValueText}" Margin="291,59,0,151" />
             <Button Content="Volume+" HorizontalAlignment="Left" Margin="306,91,0,0" VerticalAlignment="Top" Height="32" Width="60" Command="MediaCommands.IncreaseVolume"/>
             <Button Content="Volume-" HorizontalAlignment="Left" Margin="306,125,0,0" VerticalAlignment="Top" Height="32" Width="60" Command="MediaCommands.DecreaseVolume"/>
             <Button Content="Mute" HorizontalAlignment="Left" Margin="306,164,0,0" VerticalAlignment="Top" Height="32" Width="60" Command="MediaCommands.MuteVolume" CommandParameter="5" RenderTransformOrigin="0.483,0.157"/>
@@ -45,14 +56,42 @@
                 <RowDefinition />
                 <RowDefinition Height="auto"/>
             </Grid.RowDefinitions>
-            <TextBox Grid.Row="0" Text="{Binding SearchText, Mode=TwoWay}" TextChanged="SearchText_TextChanged"/>
-            <ListBox Grid.Row="1" ItemsSource="{Binding TrackList}" SelectedItem="{Binding SelectedTrack}" SelectionChanged="ListBox_SelectionChanged">
-                <ListBox.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding Name}" />
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
+
+
+            <TabControl >
+                <TabItem Header="Плейлист">
+                    <Grid Background="#FFE5E5E5">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="auto"/>
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+
+                        <TextBox Grid.Row="0" Text="{Binding SearchText, Mode=TwoWay}" TextChanged="SearchText_TextChanged"/>
+                        <ListBox Grid.Row="1" ItemsSource="{Binding TrackList}" SelectedItem="{Binding SelectedTrack}" SelectionChanged="ListBox_SelectionChanged">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding IsFavorite}" Checked="CheckBox_Checked" Unchecked="CheckBox_Unchecked">
+                                        <TextBlock Text="{Binding Name}" />
+                                    </CheckBox>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Grid>
+                </TabItem>
+                <TabItem Header="Избранное">
+                    <Grid Background="#FFE5E5E5">
+                        <ListBox Grid.Row="1" ItemsSource="{Binding FavoriteTrackList}" SelectedItem="{Binding SelectedTrack}" SelectionChanged="ListBox_SelectionChanged">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <CheckBox IsChecked="{Binding IsFavorite}">
+                                        <TextBlock Text="{Binding Name}" />
+                                    </CheckBox>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </Grid>
+                </TabItem>
+            </TabControl>
             <Button Grid.Row="2" Content="Open file" HorizontalAlignment="Left" Height="68" Width="84" Command="ApplicationCommands.Open"/>
         </Grid>
     </Grid>

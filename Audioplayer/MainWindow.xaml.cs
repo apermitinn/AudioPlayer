@@ -3,6 +3,9 @@ using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -21,17 +24,24 @@ namespace Audioplayer
     /// <summary>
     /// Interaction logic for MainWindow.xaml
     /// </summary>
-    public partial class MainWindow : Window
+    public partial class MainWindow : Window, INotifyPropertyChanged
     {
+        private int _volumeValue;
         private bool _isFileSelected = false;
         private bool _isFilePlaying = false;
         private string _searchText = "";
         private ObservableCollection<MusicTrack> _trackList = new ObservableCollection<MusicTrack>();
         private MusicTrack _selectedTrack = null;
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
         public MainWindow()
         {
             InitializeComponent();
             DataContext = this;
+
+            VolumeValue = (int)(mediaPlayer.Volume * 100);
+
 
             //_trackList.Add(new MusicTrack { Name = "Track1" });
             //_trackList.Add(new MusicTrack { Name = "Track2" });
@@ -44,10 +54,28 @@ namespace Audioplayer
         {
             get { return _trackList; }
         }
+        public ObservableCollection<MusicTrack> FavoriteTrackList
+        {
+            get { return new ObservableCollection<MusicTrack>(TrackList.Where(x=>x.IsFavorite)); }
+        }
         public MusicTrack SelectedTrack
         {
             get { return _selectedTrack; }
-            set { _selectedTrack = value; }
+            set 
+            { 
+                _selectedTrack = value;
+                RaisePropertyChange("SelectedTrack");
+            }
+        }
+        private Bitmap _artwork;
+        public Bitmap Artwork
+        {
+            get { return _artwork; }
+            set 
+            {
+                _artwork = value;
+                RaisePropertyChange("Artwork");
+            }
         }
         public string SearchText
         {
@@ -55,9 +83,19 @@ namespace Audioplayer
             set { _searchText = value; }
         }
         
-        public string VolumeValue
+        public int VolumeValue
         {
-            get { return "Громкость " + (mediaPlayer.Volume * 100) + "%"; }
+            get { return _volumeValue; }
+            set
+            {
+                _volumeValue = value;
+                RaisePropertyChange("VolumeValue");
+                RaisePropertyChange("VolumeValueText");
+            }
+        }
+        public string VolumeValueText
+        {
+            get { return $"Громксоть: {_volumeValue}%"; }
         }
 
         private void Back_Click(object sender, RoutedEventArgs e)
@@ -78,7 +116,22 @@ namespace Audioplayer
             };
             if (ofd.ShowDialog() == true)
             {
-                var track = new MusicTrack() { FilePath = ofd.FileName, Name = ofd.SafeFileName };
+                var tagFile = TagLib.File.Create(ofd.FileName);
+                MetaData meta = new MetaData
+                {
+                    Title = tagFile.Tag.Title,
+                    Album = tagFile.Tag.Album,
+                    Singer = String.Join(", ", tagFile.Tag.Performers),
+                    Year = tagFile.Tag.Year,
+                    Duration = tagFile.Properties.Duration
+                };
+                if (tagFile.Tag.Pictures.Length > 0)
+                {
+                    MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures.First().Data.Data);
+                    meta.Artwork = (Bitmap)System.Drawing.Image.FromStream(ms);
+                }
+
+                var track = new MusicTrack() { FilePath = ofd.FileName, Name = ofd.SafeFileName , MetaData = meta };
                 TrackList.Add(track);
             }
         }
@@ -131,10 +184,18 @@ namespace Audioplayer
                 mediaPlayer.IsMuted = false;
             }
             mediaPlayer.Volume += 0.05;
+            VolumeValue = (int)(mediaPlayer.Volume * 100);
         }
         private void IncreaseVolume_CanExecute(object sender, CanExecuteRoutedEventArgs e)
         {
-            e.CanExecute = true;
+            if (mediaPlayer.Volume < 1)
+            {
+                e.CanExecute = true;
+            }
+            else
+            {
+                e.CanExecute = false;
+            }
         }
         private void DecreaseVolume_Executed(object sender, ExecutedRoutedEventArgs e)
         {
@@ -143,10 +204,19 @@ namespace Audioplayer
                 mediaPlayer.IsMuted = false;
             }
             mediaPlayer.Volume -= 0.05;
+            VolumeValue = (int)(mediaPlayer.Volume * 100);
         }
         private void DecreaseVolume_CanExecute(object sender, CanExecuteRoutedEventArgs e)
         {
-            e.CanExecute = true;
+            // Из-за погрешности double нужно сравнивать очень маленьким числом, но не 0
+            if (mediaPlayer.Volume > 0.001)
+            {
+                e.CanExecute = true;
+            }
+            else
+            {
+                e.CanExecute = false;
+            }
         }
         private void MuteVolume_Executed(object sender, ExecutedRoutedEventArgs e)
         {
@@ -176,6 +246,20 @@ namespace Audioplayer
             {
                 MessageBox.Show("Ищу песню " + SearchText);
             }
+        }
+        private void RaisePropertyChange(string propName)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propName));
+        }
+
+        private void CheckBox_Checked(object sender, RoutedEventArgs e)
+        {
+            RaisePropertyChange("FavoriteTrackList");
+        }
+
+        private void CheckBox_Unchecked(object sender, RoutedEventArgs e)
+        {
+            RaisePropertyChange("FavoriteTrackList");
         }
     }
 }
