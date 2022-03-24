@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Text;
+using System.Windows.Media.Imaging;
 using TagLib;
 
 namespace Audioplayer.Models
@@ -13,6 +14,6 @@ namespace Audioplayer.Models
         public string Singer { get; set; }
         public uint Year { get; set; }
         public TimeSpan Duration { get; set; }
-        public Image Artwork { get; set; }
+        public BitmapImage Artwork { get; set; }
     }
 }

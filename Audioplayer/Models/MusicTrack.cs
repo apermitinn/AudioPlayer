@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Windows;
 using TagLib;
 
 namespace Audioplayer.Models
@@ -10,6 +11,5 @@ namespace Audioplayer.Models
         public string Name { get; set; }
         public string FilePath { get; set; }
         public MetaData MetaData { get; set; }
-        public bool IsFavorite { get; set; }
     }
 }

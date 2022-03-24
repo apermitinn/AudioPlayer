@@ -1,5 +1,7 @@
 ﻿using Audioplayer.Models;
+using Audioplayer.ViewModels;
 using Microsoft.Win32;
+using Microsoft.WindowsAPICodePack.Dialogs;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -30,8 +32,8 @@ namespace Audioplayer
         private bool _isFileSelected = false;
         private bool _isFilePlaying = false;
         private string _searchText = "";
-        private ObservableCollection<MusicTrack> _trackList = new ObservableCollection<MusicTrack>();
-        private MusicTrack _selectedTrack = null;
+        private ObservableCollection<MusicTrackViewModel> _trackList = new ObservableCollection<MusicTrackViewModel>();
+        private MusicTrackViewModel _selectedTrack = null;
 
         public event PropertyChangedEventHandler PropertyChanged;
 
@@ -50,15 +52,15 @@ namespace Audioplayer
             //_trackList.Add(new MusicTrack { Name = "Track5" });
         }
 
-        public ObservableCollection<MusicTrack> TrackList
+        public ObservableCollection<MusicTrackViewModel> TrackList
         {
             get { return _trackList; }
         }
-        public ObservableCollection<MusicTrack> FavoriteTrackList
+        public ObservableCollection<MusicTrackViewModel> FavoriteTrackList
         {
-            get { return new ObservableCollection<MusicTrack>(TrackList.Where(x=>x.IsFavorite)); }
+            get { return new ObservableCollection<MusicTrackViewModel>(TrackList.Where(x=>x.IsFavorite)); }
         }
-        public MusicTrack SelectedTrack
+        public MusicTrackViewModel SelectedTrack
         {
             get { return _selectedTrack; }
             set 
@@ -67,22 +69,44 @@ namespace Audioplayer
                 RaisePropertyChange("SelectedTrack");
             }
         }
-        private Bitmap _artwork;
-        public Bitmap Artwork
-        {
-            get { return _artwork; }
-            set 
-            {
-                _artwork = value;
-                RaisePropertyChange("Artwork");
-            }
-        }
         public string SearchText
         {
             get { return _searchText; }
-            set { _searchText = value; }
+            set 
+            { 
+                _searchText = value;
+                PerformSearch();
+            }
         }
-        
+
+        private void PerformSearch()
+        {
+            if (SearchText.Length > 2)
+            {
+                foreach (var track in TrackList)
+                {
+                    if (track.Name.IndexOf(SearchText) > -1)
+                    {
+                        track.Visibility = Visibility.Visible;
+                    }
+                    else
+                    {
+                        track.Visibility = Visibility.Collapsed;
+                    }
+                }
+            }
+            else
+            {
+                foreach (var track in TrackList)
+                {
+                    if (track.Visibility != Visibility.Visible)
+                    {
+                        track.Visibility = Visibility.Visible;
+                    }
+                }
+            }
+        }
+
         public int VolumeValue
         {
             get { return _volumeValue; }
@@ -110,30 +134,79 @@ namespace Audioplayer
 
         private void OpenFile_Executed(object sender, ExecutedRoutedEventArgs e)
         {
+            if (e.Parameter?.ToString() == "folder")
+            {
+                AddTracksFromFolder();
+            }
+            else
+            {
+                AddTracks();
+            }
+            
+        }
+
+        private void AddTracksFromFolder()
+        {
+            CommonOpenFileDialog ofd = new CommonOpenFileDialog
+            {
+                EnsurePathExists = true,
+                EnsureFileExists = false,
+                AllowNonFileSystemItems = false,
+                DefaultFileName = "Select Folder",
+                Title = "Select Folder"
+            };
+            if (ofd.ShowDialog() == CommonFileDialogResult.Ok)
+            {
+                var dirPath = System.IO.Path.GetDirectoryName(ofd.FileName);
+                var files = Directory.GetFiles(dirPath, "*.mp3");
+                foreach (var track in files)
+                {
+                    AddTrack(track);
+                }
+            }
+        }
+
+        private void AddTracks()
+        {
             OpenFileDialog ofd = new OpenFileDialog()
             {
                 Filter = "Media files (*.mp3)|*.mp3"
             };
             if (ofd.ShowDialog() == true)
             {
-                var tagFile = TagLib.File.Create(ofd.FileName);
-                MetaData meta = new MetaData
+                foreach (var track in ofd.FileNames)
                 {
-                    Title = tagFile.Tag.Title,
-                    Album = tagFile.Tag.Album,
-                    Singer = String.Join(", ", tagFile.Tag.Performers),
-                    Year = tagFile.Tag.Year,
-                    Duration = tagFile.Properties.Duration
-                };
-                if (tagFile.Tag.Pictures.Length > 0)
-                {
-                    MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures.First().Data.Data);
-                    meta.Artwork = (Bitmap)System.Drawing.Image.FromStream(ms);
+                    AddTrack(track);
                 }
-
-                var track = new MusicTrack() { FilePath = ofd.FileName, Name = ofd.SafeFileName , MetaData = meta };
-                TrackList.Add(track);
             }
+        }
+        private void AddTrack(string filePath)
+        {
+            var file = new FileInfo(filePath);
+            var tagFile = TagLib.File.Create(filePath);
+            MetaData meta = new MetaData
+            {
+                Title = tagFile.Tag.Title,
+                Album = tagFile.Tag.Album,
+                Singer = String.Join(", ", tagFile.Tag.Performers),
+                Year = tagFile.Tag.Year,
+                Duration = tagFile.Properties.Duration
+            };
+            if (tagFile.Tag.Pictures.Length > 0)
+            {
+                MemoryStream ms = new MemoryStream(tagFile.Tag.Pictures.First().Data.Data);
+                ms.Seek(0, SeekOrigin.Begin);
+
+                BitmapImage image = new BitmapImage();
+                image.BeginInit();
+                image.StreamSource = ms;
+                image.EndInit();
+                meta.Artwork = image;
+            }
+
+            var track = new MusicTrack() { FilePath = filePath, Name = file.Name, MetaData = meta };
+            var trackVM = new MusicTrackViewModel(track);
+            TrackList.Add(trackVM);
         }
 
         private void OpenFile_CanExecute(object sender, CanExecuteRoutedEventArgs e)
