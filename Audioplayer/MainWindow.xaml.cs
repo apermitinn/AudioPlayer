@@ -119,7 +119,7 @@ namespace Audioplayer
         }
         public string VolumeValueText
         {
-            get { return $"Громксоть: {_volumeValue}%"; }
+            get { return $"Громкость: {_volumeValue}%"; }
         }
 
         private void Back_Click(object sender, RoutedEventArgs e)
